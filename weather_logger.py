@@ -3,10 +3,18 @@
 # csv: reads and writes CSV files
 # os: interacts with the file system
 # datetime: gets the current date and time
+# colorama: adds color to terminal output (cross-platform)
 import requests
 import csv
 import os
 from datetime import datetime
+from colorama import init, Fore, Style
+
+# I want orange text for outputs
+ORANGE = "\033[38;2;255;165;0m"
+
+# Initialize colorama (required for Windows color support)
+init(autoreset=True)
 
 # --- Location Settings ---
 # Latitude and longitude for Hartsfield-Jackson Atlanta International Airport
@@ -33,6 +41,9 @@ def fetch_weather():
     # Make Web Request
     response = requests.get(url, params=params)
 
+    if response.status_code != 200:
+        raise Exception(Fore.RED + f"API request failed with status code {response.status_code}")
+
     # Convert the response to Python dictionary
     data = response.json()
 
@@ -43,12 +54,6 @@ def fetch_weather():
     windspeed = current["windspeed"]
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Temporary Output For QA
-    print(f"Timestamp: {timestamp}")
-    print(f"Location: {LOCATION_NAME}")
-    print(f"Temperature: {temperature_f:.1f}°F")
-    print(f"Wind Speed: {windspeed} km/h")
-
     return {
         "timestamp": timestamp,
         "location": LOCATION_NAME,
@@ -56,5 +61,32 @@ def fetch_weather():
         "windspeed_kmh": windspeed
       }
 
-# --- TEMPORARY: call the function so we can test it ---
-fetch_weather()
+# Write weather data to CSV
+# Appends a new row to the log file each time it runs
+def log_weather(data):
+    file_exists = os.path.isfile(LOG_FILE)
+
+    # Open the file in append mode
+    with open(LOG_FILE, "a", newline="") as csvfile:
+        fieldnames = ["timestamp", "location", "temperature_f", "windspeed_kmh"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # If the file didn't exist before, write the header
+        if not file_exists:
+            writer.writeheader()
+
+        # Write the weather data as a new row
+        writer.writerow(data)
+    
+    print (Fore.GREEN + f"Data logged to {LOG_FILE}")
+
+# --- Main Entry Point ---
+def main():
+    print (ORANGE + f"Fetching weather data for {LOCATION_NAME}...")
+    weather_data = fetch_weather()
+    log_weather(weather_data)
+    print(Fore.GREEN + "Weather data successfully logged. Goodbye!")
+
+# This line ensures main() only runs when we execute this file directly.
+if __name__ == "__main__":
+    main()
