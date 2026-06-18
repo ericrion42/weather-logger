@@ -82,7 +82,7 @@ def log_weather(data):
 
 # --- Main Entry Point ---
 def main():
-    print (ORANGE + f"Fetching weather data for {LOCATION_NAME}...")
+    print(ORANGE + f"Fetching weather data for {LOCATION_NAME}...")
     weather_data = fetch_weather()
     log_weather(weather_data)
     print(Fore.GREEN + "Weather data successfully logged. Goodbye!")
